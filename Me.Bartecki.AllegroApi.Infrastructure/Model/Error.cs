@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Me.Bartecki.Allegro.Infrastructure.Model
+﻿namespace Me.Bartecki.Allegro.Infrastructure.Model
 {
     public class ErrorMessage
     {

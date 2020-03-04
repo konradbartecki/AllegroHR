@@ -35,7 +35,7 @@ namespace Me.Bartecki.Allegro.Api
             services.AddGithubIntegration(Configuration.GetValue<string>("Integrations.Github.Token"));
             services.Decorate<IRepositoryStoreService, CachedRepositoryDecorator>();
             services.AddScoped<IRepoStatisticsService, RepoStatisticsService>();
-            if(Configuration.GetValue<bool>("RoundNumbers"))
+            if (Configuration.GetValue<bool>("RoundNumbers"))
                 services.Decorate<IRepoStatisticsService, RoundedStatisticsDecorator>();
             if (Configuration.GetValue<bool>("OrderLetters"))
                 services.Decorate<IRepoStatisticsService, OrderedLettersStatisticsDecorator>();

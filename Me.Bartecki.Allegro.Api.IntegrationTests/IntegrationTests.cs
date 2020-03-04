@@ -1,13 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Newtonsoft.Json;
-using System.Threading;
-using System.Threading.Tasks;
 using FluentAssertions;
 using GraphQL.Client.Http;
 using Me.Bartecki.Allegro.Domain.Model;
@@ -15,15 +5,22 @@ using Me.Bartecki.Allegro.Infrastructure.Integrations.RepositoryStores;
 using Me.Bartecki.Allegro.Infrastructure.Integrations.RepositoryStores.GitHub;
 using Me.Bartecki.Allegro.Infrastructure.Services;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Moq.Protected;
+using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Me.Bartecki.Allegro.Api.IntegrationTests
 {
@@ -128,7 +125,7 @@ namespace Me.Bartecki.Allegro.Api.IntegrationTests
                 })
                 .Start()
                 .GetTestClient();
-            
+
             //We want this exception rethrowed
             await Assert.ThrowsExceptionAsync<GraphQLHttpException>(() =>
                 client.SendAsync(new HttpRequestMessage(HttpMethod.Get, "/repositories/ignored")));
@@ -136,7 +133,7 @@ namespace Me.Bartecki.Allegro.Api.IntegrationTests
 
         [TestMethod]
         public void CanReturn_DependencyFailed_OnGitHubTimeout()
-        { 
+        {
             var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
             handlerMock
                 .Protected()

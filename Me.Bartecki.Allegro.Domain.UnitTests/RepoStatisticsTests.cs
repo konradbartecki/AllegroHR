@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using FluentAssertions;
+﻿using FluentAssertions;
 using Me.Bartecki.Allegro.Domain.Model;
 using Me.Bartecki.Allegro.Domain.Services;
 using Me.Bartecki.Allegro.Domain.Services.Decorators;
@@ -13,6 +8,8 @@ using Me.Bartecki.Allegro.Infrastructure.Model;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Optional;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Me.Bartecki.Allegro.Domain.UnitTests
 {
@@ -55,7 +52,7 @@ namespace Me.Bartecki.Allegro.Domain.UnitTests
             mockedRepositoryStore.Setup(x => x.GetUserRepositoriesAsync("username"))
                 .ReturnsAsync(Option.Some<IEnumerable<Repository>, AllegroApiException>(mockedRepositories));
             var service = new RepoStatisticsService(mockedRepositoryStore.Object, mockedLetterCounter.Object);
-            
+
             //Act
             var stats = service.GetRepositoryStatisticsAsync("username").Result
                 .Match(some => some, none => null);

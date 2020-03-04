@@ -1,5 +1,5 @@
-﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
+using System.Collections.Generic;
 
 namespace Me.Bartecki.Allegro.Domain.Model
 {
@@ -11,13 +11,13 @@ namespace Me.Bartecki.Allegro.Domain.Model
 
         [JsonProperty("avgStargazers")]
         public double AverageStargazers { get; set; }
-        
+
         [JsonProperty("avgWatchers")]
         public double AverageWatchers { get; set; }
-        
+
         [JsonProperty("avgForks")]
         public double AverageForks { get; set; }
-        
+
         [JsonProperty("avgSize")]
         public double AverageSize { get; set; }
     }

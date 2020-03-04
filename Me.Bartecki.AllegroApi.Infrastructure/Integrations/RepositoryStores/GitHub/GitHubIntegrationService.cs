@@ -1,14 +1,14 @@
-﻿using System;
+﻿using GraphQL;
+using GraphQL.Client.Http;
+using Me.Bartecki.Allegro.Infrastructure.Model;
+using Me.Bartecki.Allegro.Infrastructure.Services;
+using Optional;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using GraphQL;
-using GraphQL.Client.Http;
-using Me.Bartecki.Allegro.Infrastructure.Model;
-using Me.Bartecki.Allegro.Infrastructure.Services;
-using Optional;
 
 namespace Me.Bartecki.Allegro.Infrastructure.Integrations.RepositoryStores.GitHub
 {

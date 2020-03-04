@@ -1,9 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Me.Bartecki.Allegro.Infrastructure.Model;
+﻿using Me.Bartecki.Allegro.Infrastructure.Model;
 using Microsoft.Extensions.Caching.Memory;
 using Optional;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Me.Bartecki.Allegro.Infrastructure.Integrations.RepositoryStores.Decorators
 {

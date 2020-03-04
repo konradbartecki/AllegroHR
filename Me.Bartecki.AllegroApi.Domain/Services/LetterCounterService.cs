@@ -1,7 +1,7 @@
-﻿using System;
+﻿using Me.Bartecki.Allegro.Domain.Services.Interfaces;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using Me.Bartecki.Allegro.Domain.Services.Interfaces;
 
 namespace Me.Bartecki.Allegro.Domain.Services
 {

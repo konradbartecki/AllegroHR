@@ -1,9 +1,8 @@
-﻿using Me.Bartecki.Allegro.Domain.Services;
-using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
-using Me.Bartecki.Allegro.Api.Services;
+﻿using Me.Bartecki.Allegro.Api.Services;
 using Me.Bartecki.Allegro.Domain.Model;
 using Me.Bartecki.Allegro.Domain.Services.Interfaces;
+using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 
 namespace Me.Bartecki.Allegro.Api.Controllers
 {

@@ -1,6 +1,6 @@
-﻿using System.Collections.Generic;
-using GraphQL.Types;
+﻿using GraphQL.Types;
 using GraphQL.Types.Relay.DataObjects;
+using System.Collections.Generic;
 
 namespace Me.Bartecki.Allegro.Infrastructure.Integrations.RepositoryStores.GitHub
 {

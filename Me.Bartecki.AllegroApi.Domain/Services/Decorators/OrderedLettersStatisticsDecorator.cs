@@ -1,10 +1,9 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Me.Bartecki.Allegro.Domain.Model;
+﻿using Me.Bartecki.Allegro.Domain.Model;
 using Me.Bartecki.Allegro.Domain.Services.Interfaces;
 using Me.Bartecki.Allegro.Infrastructure.Model;
 using Optional;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Me.Bartecki.Allegro.Domain.Services.Decorators
 {

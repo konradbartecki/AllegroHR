@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Me.Bartecki.Allegro.Domain.Services;
-using Me.Bartecki.Allegro.Domain.Services.Decorators;
-using Me.Bartecki.Allegro.Domain.Services.Interfaces;
+﻿using Me.Bartecki.Allegro.Domain.Services;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
+using System;
 
 namespace Me.Bartecki.Allegro.Domain.UnitTests
 {

@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Threading.Tasks;
-using Me.Bartecki.Allegro.Infrastructure.Model;
+﻿using Me.Bartecki.Allegro.Infrastructure.Model;
 using Microsoft.AspNetCore.Mvc;
-using Optional;
+using System.Net;
 
 namespace Me.Bartecki.Allegro.Api.Services
 {
@@ -38,15 +33,15 @@ namespace Me.Bartecki.Allegro.Api.Services
             //Alternatively when isInDevelopment then we could actually throw this exception.
 
             var errorCode = exception.ErrorCode;
-            var httpStatusCode = (int) GetHttpStatusCode(errorCode);
+            var httpStatusCode = (int)GetHttpStatusCode(errorCode);
             var message = new ErrorMessage()
             {
                 ErrorCode = errorCode,
-                Message = _isInDevelopment ? 
-                    exception.ToString() : 
+                Message = _isInDevelopment ?
+                    exception.ToString() :
                     $"{errorCode.ToString()}: {exception.Message}"
             };
-            return new ObjectResult(message) {StatusCode = httpStatusCode};
+            return new ObjectResult(message) { StatusCode = httpStatusCode };
         }
     }
 }
