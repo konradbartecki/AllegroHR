@@ -3,6 +3,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Me.Bartecki.Allegro.Domain.Model;
 using Me.Bartecki.Allegro.Domain.Services.Interfaces;
+using Me.Bartecki.Allegro.Infrastructure.Model;
+using Optional;
 
 namespace Me.Bartecki.Allegro.Domain.Services.Decorators
 {
@@ -15,12 +17,12 @@ namespace Me.Bartecki.Allegro.Domain.Services.Decorators
             _innerService = innerService;
         }
 
-        public async Task<UserStatistics> GetRepositoryStatisticsAsync(string username)
+        public async Task<Option<UserStatistics, AllegroApiException>> GetRepositoryStatisticsAsync(string username)
         {
             var input = await _innerService.GetRepositoryStatisticsAsync(username);
-            input.Letters = input.Letters
+            input.Map(stats => stats.Letters = stats.Letters
                 .OrderBy(x => x.Key)
-                .ToDictionary(x => x.Key, x => x.Value);
+                .ToDictionary(x => x.Key, x => x.Value));
             return input;
         }
     }

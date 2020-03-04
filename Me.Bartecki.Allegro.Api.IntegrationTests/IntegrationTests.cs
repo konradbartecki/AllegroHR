@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -8,6 +9,7 @@ using Newtonsoft.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
+using GraphQL.Client.Http;
 using Me.Bartecki.Allegro.Domain.Model;
 using Me.Bartecki.Allegro.Infrastructure.Integrations.RepositoryStores;
 using Me.Bartecki.Allegro.Infrastructure.Integrations.RepositoryStores.GitHub;
@@ -28,16 +30,12 @@ namespace Me.Bartecki.Allegro.Api.IntegrationTests
     [TestClass]
     public class IntegrationTests
     {
-        //TODO: On incorrect username
-        //TODO: On no internet
-        //TODO: On wrong token
-        //TODO: On api exception
         private HttpClient _cilent;
 
-        private HttpClient GetMockedHttpClinet()
+        private HttpClient GetMockedHttpClinet(string filename)
         {
             var projectDir = Directory.GetCurrentDirectory();
-            var responsePath = Path.Combine(projectDir, "example_response.json");
+            var responsePath = Path.Combine(projectDir, filename);
             var responseText = File.ReadAllText(responsePath);
 
             var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
@@ -91,11 +89,87 @@ namespace Me.Bartecki.Allegro.Api.IntegrationTests
             stats.Letters.Should().NotBeEmpty();
         }
 
+        [TestMethod]
+        public void CanReturn_NotFound_OnUserNotFound()
+        {
+            var client = GetHostBuilder().Start().GetTestClient();
+            var response = client.SendAsync((new HttpRequestMessage(HttpMethod.Get, $"/repositories/user-that-does-not-exist-{Guid.NewGuid():N}"))).Result;
+            Assert.AreEqual(HttpStatusCode.NotFound, response.StatusCode);
+        }
+
+        [TestMethod]
+        public void CanReturn_NotFound_OnNoRepositories()
+        {
+            var mockedHttpClient = GetMockedHttpClinet("example_response_norepos.json");
+            var embeddedService = new EmbeddedResourceService();
+            var githubService = new GitHubIntegrationService(mockedHttpClient, embeddedService);
+
+            var client = GetHostBuilder().ConfigureServices(x =>
+                    x.AddScoped<IRepositoryStoreService, GitHubIntegrationService>(provider => githubService))
+                .Start()
+                .GetTestClient();
+            var response = client.SendAsync((new HttpRequestMessage(HttpMethod.Get, "/repositories/ignored"))).Result;
+            Assert.AreEqual(HttpStatusCode.NotFound, response.StatusCode);
+        }
+
+        [TestMethod]
+        public async Task CanThrowException_OnIncorrectGitHubToken()
+        {
+            var fakeConfig = new Dictionary<string, string>()
+            {
+                {"Integrations.Github.Token", "incorrect-token"}
+            };
+            var client = new HostBuilder()
+                .ConfigureWebHost(webHost =>
+                {
+                    webHost.UseTestServer();
+                    webHost.ConfigureAppConfiguration(config => config.AddInMemoryCollection(fakeConfig));
+                    webHost.UseStartup<Startup>();
+                })
+                .Start()
+                .GetTestClient();
+            
+            //We want this exception rethrowed
+            await Assert.ThrowsExceptionAsync<GraphQLHttpException>(() =>
+                client.SendAsync(new HttpRequestMessage(HttpMethod.Get, "/repositories/ignored")));
+        }
+
+        [TestMethod]
+        public void CanReturn_DependencyFailed_OnGitHubTimeout()
+        { 
+            var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+            handlerMock
+                .Protected()
+                // Setup the PROTECTED method to mock
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>()
+                )
+                // prepare the expected response of the mocked http call
+                .ReturnsAsync(new HttpResponseMessage()
+                {
+                    StatusCode = HttpStatusCode.RequestTimeout,
+                })
+                .Verifiable();
+            var mockedClient = new HttpClient(handlerMock.Object);
+            var embeddedService = new EmbeddedResourceService();
+            var githubService = new GitHubIntegrationService(mockedClient, embeddedService);
+
+            var client = GetHostBuilder().ConfigureServices(x =>
+                    x.AddScoped<IRepositoryStoreService, GitHubIntegrationService>(provider => githubService))
+                .Start()
+                .GetTestClient();
+
+            var response = client.SendAsync((new HttpRequestMessage(HttpMethod.Get, "/repositories/ignored"))).Result;
+            Assert.AreEqual(HttpStatusCode.FailedDependency, response.StatusCode);
+        }
+
 
         [TestMethod]
         public void CanCalculateStatistics_Mocked()
         {
-            var mockedHttpClient = GetMockedHttpClinet();
+            var mockedHttpClient = GetMockedHttpClinet("example_response.json");
             var embeddedService = new EmbeddedResourceService();
             var githubService = new GitHubIntegrationService(mockedHttpClient, embeddedService);
 

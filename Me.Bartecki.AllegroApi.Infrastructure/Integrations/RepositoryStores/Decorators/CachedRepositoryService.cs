@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Me.Bartecki.Allegro.Infrastructure.Model;
 using Microsoft.Extensions.Caching.Memory;
+using Optional;
 
 namespace Me.Bartecki.Allegro.Infrastructure.Integrations.RepositoryStores.Decorators
 {
@@ -16,7 +17,7 @@ namespace Me.Bartecki.Allegro.Infrastructure.Integrations.RepositoryStores.Decor
             _innerRepositoryService = innerRepositoryService;
             _memoryCache = memoryCache;
         }
-        public async Task<IEnumerable<Repository>> GetUserRepositoriesAsync(string username)
+        public async Task<Option<IEnumerable<Repository>, AllegroApiException>> GetUserRepositoriesAsync(string username)
         {
             return await _memoryCache.GetOrCreateAsync(username, async (entry) =>
             {

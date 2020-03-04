@@ -12,6 +12,7 @@ using Me.Bartecki.Allegro.Infrastructure.Integrations.RepositoryStores;
 using Me.Bartecki.Allegro.Infrastructure.Model;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using Optional;
 
 namespace Me.Bartecki.Allegro.Domain.UnitTests
 {
@@ -52,11 +53,12 @@ namespace Me.Bartecki.Allegro.Domain.UnitTests
             mockedLetterCounter.Setup(x => x.CountLetters(It.IsAny<string>()))
                 .Returns(new Dictionary<char, int>());
             mockedRepositoryStore.Setup(x => x.GetUserRepositoriesAsync("username"))
-                .ReturnsAsync(mockedRepositories);
+                .ReturnsAsync(Option.Some<IEnumerable<Repository>, AllegroApiException>(mockedRepositories));
             var service = new RepoStatisticsService(mockedRepositoryStore.Object, mockedLetterCounter.Object);
             
             //Act
-            var stats = service.GetRepositoryStatisticsAsync("username").Result;
+            var stats = service.GetRepositoryStatisticsAsync("username").Result
+                .Match(some => some, none => null);
 
             //Assert
             Assert.AreEqual(2, stats.AverageForks);
@@ -88,11 +90,12 @@ namespace Me.Bartecki.Allegro.Domain.UnitTests
             mockedLetterCounter.Setup(x => x.CountLetters(It.IsAny<string>()))
                 .Returns(new Dictionary<char, int>());
             mockedRepositoryStore.Setup(x => x.GetUserRepositoriesAsync("username"))
-                .ReturnsAsync(mockedRepositories);
+                .ReturnsAsync(Option.Some<IEnumerable<Repository>, AllegroApiException>(mockedRepositories));
             var service = new RepoStatisticsService(mockedRepositoryStore.Object, mockedLetterCounter.Object);
 
             //Act
-            var stats = service.GetRepositoryStatisticsAsync("username").Result;
+            var stats = service.GetRepositoryStatisticsAsync("username").Result
+                .Match(some => some, none => null);
 
             //Assert
             Assert.AreEqual(0, stats.AverageForks);
@@ -111,7 +114,7 @@ namespace Me.Bartecki.Allegro.Domain.UnitTests
                 new Repository() {Name = "Allegro-test"}
             };
             mockedRepositoryStore.Setup(x => x.GetUserRepositoriesAsync("username"))
-                .ReturnsAsync(repos);
+                .ReturnsAsync(Option.Some<IEnumerable<Repository>, AllegroApiException>(repos));
             mockedLetterCounter.Setup(x => x.CountLetters("Allegro-api"))
                 .Returns(new Dictionary<char, int>()
                 {
@@ -127,7 +130,8 @@ namespace Me.Bartecki.Allegro.Domain.UnitTests
             var service = new RepoStatisticsService(mockedRepositoryStore.Object, mockedLetterCounter.Object);
 
             //Act
-            var stats = service.GetRepositoryStatisticsAsync("username").Result;
+            var stats = service.GetRepositoryStatisticsAsync("username").Result
+                .Match(some => some, none => null);
 
             //Assert
             stats.Letters.Should().BeEquivalentTo(new Dictionary<char, int>()
@@ -147,7 +151,7 @@ namespace Me.Bartecki.Allegro.Domain.UnitTests
             var mockedLetterCounter = new Mock<ILetterCounterService>();
             var mockedRepositoryStore = new Mock<IRepositoryStoreService>();
             mockedRepositoryStore.Setup(x => x.GetUserRepositoriesAsync("username"))
-                .ReturnsAsync(new List<Repository>());
+                .ReturnsAsync(Option.Some<IEnumerable<Repository>, AllegroApiException>(new List<Repository>()));
 
             var service = new RepoStatisticsService(mockedRepositoryStore.Object, mockedLetterCounter.Object);
 
@@ -155,14 +159,7 @@ namespace Me.Bartecki.Allegro.Domain.UnitTests
             var stats = service.GetRepositoryStatisticsAsync("username").Result;
 
             //Assert
-            stats.Owner.Should().Be("username");
-            stats.AverageStargazers.Should().Be(0);
-            stats.AverageForks.Should().Be(0);
-            stats.AverageSize.Should().Be(0);
-            stats.AverageWatchers.Should().Be(0);
-            stats.Letters.Should()
-                .NotBeNull("it should be safe to access a dictionary regardless if user has repositories or not");
-            stats.Letters.Should().BeEmpty();
+            stats.MatchNone(exception => Assert.AreEqual(ErrorCodes.UserHasNoRepositories, exception.ErrorCode));
         }
 
         [TestMethod]
@@ -180,11 +177,12 @@ namespace Me.Bartecki.Allegro.Domain.UnitTests
             };
             var innerService = new Mock<IRepoStatisticsService>();
             innerService.Setup(x => x.GetRepositoryStatisticsAsync(It.IsAny<string>()))
-                .ReturnsAsync(mockedOutput);
+                .ReturnsAsync(Option.Some<UserStatistics, AllegroApiException>(mockedOutput));
             var decorator = new OrderedLettersStatisticsDecorator(innerService.Object);
 
             //Act
-            var orderedOutput = decorator.GetRepositoryStatisticsAsync("").Result;
+            var orderedOutput = decorator.GetRepositoryStatisticsAsync("").Result
+                .Match(some => some, none => null);
 
             //Assert
             Assert.AreEqual('a', orderedOutput.Letters.First().Key);

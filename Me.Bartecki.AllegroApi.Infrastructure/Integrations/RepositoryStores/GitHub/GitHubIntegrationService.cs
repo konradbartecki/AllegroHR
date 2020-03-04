@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using GraphQL;
 using GraphQL.Client.Http;
 using Me.Bartecki.Allegro.Infrastructure.Model;
 using Me.Bartecki.Allegro.Infrastructure.Services;
+using Optional;
 
 namespace Me.Bartecki.Allegro.Infrastructure.Integrations.RepositoryStores.GitHub
 {
@@ -22,42 +25,6 @@ namespace Me.Bartecki.Allegro.Infrastructure.Integrations.RepositoryStores.GitHu
             _embeddedResourceService = embeddedResourceService;
         }
 
-        private async Task<IEnumerable<GitHubRepository>> GetAllUserRepositoriesAsync(string username)
-        {
-            string query = _embeddedResourceService.GetResource("Me.Bartecki.Allegro.Infrastructure.Integrations.RepositoryStores.GitHub.GitHubQuery.graphql");
-            bool isNextPageAvailable = false;
-            string nextPageId = null;
-
-            List<GitHubRepository> repositories = new List<GitHubRepository>();
-            do
-            {
-                var request = new GraphQLHttpRequest(query,
-                    variables: new
-                    {
-                        username = username,
-                        nextCursorId = nextPageId
-                    });
-                var response = await _client.SendQueryAsync<RootResponse>(request);
-                if (response.Errors?.Any() == true)
-                {
-                    string message = response.Errors.First().Message;
-                    throw new Exception(message);
-                }
-
-                repositories.AddRange(response.Data.User.Repositories.Nodes);
-
-                //Handle pagination
-                var pageInfo = response.Data.User.Repositories.PageInfo;
-                isNextPageAvailable = pageInfo.HasNextPage;
-                if (isNextPageAvailable)
-                {
-                    nextPageId = pageInfo.EndCursor;
-                }
-            } while (isNextPageAvailable);
-
-            return repositories;
-        }
-
         private Repository Convert(GitHubRepository source)
         {
             var dest = new Repository();
@@ -69,10 +36,75 @@ namespace Me.Bartecki.Allegro.Infrastructure.Integrations.RepositoryStores.GitHu
             return dest;
         }
 
-        public async Task<IEnumerable<Repository>> GetUserRepositoriesAsync(string username)
+        public async Task<Option<IEnumerable<Repository>, AllegroApiException>> GetUserRepositoriesAsync(string username)
         {
-            var allRepos = await GetAllUserRepositoriesAsync(username);
-            return allRepos.Select(Convert);
+            string query = _embeddedResourceService.GetResource("Me.Bartecki.Allegro.Infrastructure.Integrations.RepositoryStores.GitHub.GitHubQuery.graphql");
+            try
+            {
+                bool isNextPageAvailable = false;
+                string nextPageId = null;
+
+                List<GitHubRepository> repositories = new List<GitHubRepository>();
+                do
+                {
+                    var request = new GraphQLHttpRequest(query,
+                        new
+                        {
+                            username = username,
+                            nextCursorId = nextPageId
+                        });
+                    var response = await _client.SendQueryAsync<RootResponse>(request);
+                    if (response.Errors?.Any() == true)
+                    {
+                        return GetException(response);
+                    }
+
+                    repositories.AddRange(response.Data.User.Repositories.Nodes);
+
+                    //Handle pagination
+                    var pageInfo = response.Data.User.Repositories.PageInfo;
+                    isNextPageAvailable = pageInfo.HasNextPage;
+                    if (isNextPageAvailable)
+                    {
+                        nextPageId = pageInfo.EndCursor;
+                    }
+                } while (isNextPageAvailable);
+
+                return Option.Some<IEnumerable<Repository>, AllegroApiException>(repositories.Select(Convert));
+            }
+            catch (GraphQLHttpException httpRequestException) when (
+                httpRequestException.HttpResponseMessage.StatusCode == HttpStatusCode.Unauthorized)
+            {
+                //Rethrow this exception, critical misconfiguration.
+                throw;
+            }
+            catch (GraphQLHttpException httpRequestException)
+            {
+                var errorCode = ErrorCodes.RepositorySource_UnableToReach;
+                var apiException = new AllegroApiException(
+                    errorCode,
+                    httpRequestException.Message,
+                    httpRequestException);
+
+                return Option.None<IEnumerable<Repository>, AllegroApiException>(apiException);
+            }
+        }
+
+        private Option<IEnumerable<Repository>, AllegroApiException> GetException(
+            GraphQLResponse<RootResponse> response)
+        {
+            bool userNotFound = response.Errors.First().Message.Contains("Could not resolve to a User");
+            if (userNotFound)
+            {
+                return Option.None<IEnumerable<Repository>, AllegroApiException>(
+                    new AllegroApiException(ErrorCodes.UserNotFound, response.Errors.First().Message));
+            }
+            else
+            {
+                var e = new Exception("Unhandled exception while requesting a GitHub repository");
+                e.Data.Add("response", response);
+                throw e;
+            }
         }
     }
 }

@@ -1,3 +1,4 @@
+using Me.Bartecki.Allegro.Api.Services;
 using Me.Bartecki.Allegro.Domain.Services;
 using Me.Bartecki.Allegro.Domain.Services.Decorators;
 using Me.Bartecki.Allegro.Domain.Services.Interfaces;
@@ -22,6 +23,8 @@ namespace Me.Bartecki.Allegro.Api
 
         public IConfiguration Configuration { get; }
 
+        private bool _isInDevelopment = false;
+
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
@@ -36,6 +39,7 @@ namespace Me.Bartecki.Allegro.Api
                 services.Decorate<IRepoStatisticsService, RoundedStatisticsDecorator>();
             if (Configuration.GetValue<bool>("OrderLetters"))
                 services.Decorate<IRepoStatisticsService, OrderedLettersStatisticsDecorator>();
+            services.AddTransient(x => new ErrorCodeMapper(_isInDevelopment));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -43,6 +47,7 @@ namespace Me.Bartecki.Allegro.Api
         {
             if (env.IsDevelopment())
             {
+                _isInDevelopment = true;
                 app.UseDeveloperExceptionPage();
             }
 

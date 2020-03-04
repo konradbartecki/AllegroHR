@@ -1,9 +1,12 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Me.Bartecki.Allegro.Domain.Model;
 using Me.Bartecki.Allegro.Domain.Services.Interfaces;
 using Me.Bartecki.Allegro.Infrastructure.Integrations.RepositoryStores;
+using Me.Bartecki.Allegro.Infrastructure.Model;
+using Optional;
 
 namespace Me.Bartecki.Allegro.Domain.Services
 {
@@ -27,13 +30,31 @@ namespace Me.Bartecki.Allegro.Domain.Services
             _letterCounterService = letterCounterService;
         }
 
-        public async Task<UserStatistics> GetRepositoryStatisticsAsync(string username)
+        public async Task<Option<UserStatistics, AllegroApiException>> GetRepositoryStatisticsAsync(string username)
         {
-            var taskResult = await _repositoryStore.GetUserRepositoriesAsync(username);
-            var repos = taskResult.ToList();
-            var ret = new UserStatistics {Owner = username};
-            if (!repos.Any()) return ret;
+            var optionTaskResult = await _repositoryStore.GetUserRepositoriesAsync(username);
+            return optionTaskResult.Match(
+                some: repos =>
+                {
+                    var repositories = repos.ToList();
+                    if (repositories.Any())
+                    {
+                        return Option.Some<UserStatistics, AllegroApiException>(
+                            TransformStatistics(username, repositories));
+                    }
+                    else
+                    {
+                        return Option.None<UserStatistics, AllegroApiException>(
+                            new AllegroApiException(ErrorCodes.UserHasNoRepositories));
+                    }
+                },
+                none: exception => Option.None<UserStatistics, AllegroApiException>(exception)
+            );
+        }
 
+        private UserStatistics TransformStatistics(string username, List<Repository> repos)
+        {
+            var ret = new UserStatistics { Owner = username };
             foreach (var repo in repos)
             {
                 //Temporarily sum everything on a returned object,
@@ -43,7 +64,7 @@ namespace Me.Bartecki.Allegro.Domain.Services
                 ret.AverageWatchers += repo.Watchers;
                 ret.AverageSize += repo.Size;
                 var thisRepoLetterCount = _letterCounterService.CountLetters(repo.Name);
-                
+
                 //Merge dictionaries
                 foreach (var pair in thisRepoLetterCount)
                 {
